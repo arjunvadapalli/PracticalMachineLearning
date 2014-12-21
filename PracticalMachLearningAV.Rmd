@@ -1,0 +1,36 @@
+---
+title: "PracticalMachineLearningProject"
+author: "Arjun Vadapalli"
+date: "Sunday, December 21, 2014"
+output: html_document
+---
+
+The random forest classifier was built on a subset of the training data. Before creating the model the training data set was formatted by eliminating columns that either contained no data or columns with near zero variance. Instead of using the entire training data a fraction was used and this process was repeated until a model with the best accuracy was found. This model was used to predict the classe column for the 20 test data. 
+
+```{r}
+library(caret)
+
+# load training data
+pmlTraining <- read.csv("C:/Users/Arjun/Documents/Classes/pml-training.csv")
+
+##   remove columns that are near zero variance and NAs
+nzv <- nearZeroVar(pmlTraining,saveMetrics=T)
+nzvidx <- which(nzv$nzv == TRUE)
+pmlT1 <- pmlTraining[,-nzvidx]
+NAcols <- pmlT1[,!complete.cases(t(pmlT1))]
+pmlT2 <- pmlT1[,!(names(pmlT1) %in% colnames(NAcols))]
+pmlT3 <- pmlT2[,-c(1,2,3,4,5,6)]     # first few columns do not contain relevant data
+
+#train data - repeat until one finds the best model - this shows one partition
+inTrain <- createDataPartition(y=pmlT3$classe,p=0.2,list=F)
+training <- pmlT3[inTrain,]
+testing <- pmlT3[-inTrain,]
+modFit <- train(classe ~ ., data=training,method="rf",prox=T)
+
+# test data
+pred <- predict(modFit,testing); testing$predRight <- pred == testing$classe
+table(pred,testing$classe)
+
+```
+
+
